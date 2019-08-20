@@ -20,13 +20,9 @@ def print_msg(msg):
 
 def optimize_orders_processing(sales_clusters_df,cluster,maximum_waiting_time):
     
-    try:
-        sales_cluster=sales_clusters_df[sales_clusters_df['Cluster']==cluster][['noisy_date','noisy_quantity','product']].\
-    sort_values(by='noisy_date')
-    
-    except:
-         sales_cluster=sales_clusters_df[sales_clusters_df['Cluster']==cluster][['noisy_date','noisy_quantity']].\
-    sort_values(by='noisy_date')
+   
+    sales_cluster=sales_clusters_df[sales_clusters_df['Cluster']==cluster][['noisy_date','noisy_quantity','product']].\
+sort_values(by='noisy_date')
     
     sales_cluster=sales_cluster.reset_index(drop=True)
     
@@ -126,7 +122,7 @@ def generate_models_n_preds_df_n_plotly_viz(sales_clusters_df,test_start_date,pr
     """
     test_year=test_start_date.split('-')[0]
     # First select the product df with the sales dates and copy it into a new df
-    prophet_date_df=sales_clusters_df[sales_clusters_df.product_code==product][['noisy_date']].copy()
+    prophet_date_df=sales_clusters_df[sales_clusters_df['product']==product][['noisy_date']].copy()
     prophet_date_df.reset_index(drop=True,inplace=True)
     
     # Using global variable "test_year", generate the index where we split the df into a train year and a test year
@@ -154,7 +150,7 @@ def generate_models_n_preds_df_n_plotly_viz(sales_clusters_df,test_start_date,pr
     #plot_date_preds(next_sale_date_forecast,product,idx_split)
     
     # Select the product df with the sales dates AND quantities and copy it into a new df
-    prophet_qty_df=sales_clusters_df[sales_clusters_df.product_code==product][['noisy_date','noisy_quantity']].copy()
+    prophet_qty_df=sales_clusters_df[sales_clusters_df['product']==product][['noisy_date','noisy_quantity']].copy()
     
     # Make it prophet compliant
     prophet_qty_df.rename(index=str, 
@@ -320,7 +316,7 @@ def plot_full_preds(full_preds_df, product, idx_split):
 
 def get_aggregated_preds(sales_clusters_df,cluster,test_start_date):
     
-    cluster_products=sales_clusters_df[sales_clusters_df.Cluster==cluster].product_code.unique()
+    cluster_products=sales_clusters_df[sales_clusters_df.Cluster==cluster]['product'].unique()
     
     cluster_preds=[]
     for prod in cluster_products:
