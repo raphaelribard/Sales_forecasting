@@ -18,7 +18,7 @@ def print_msg(msg):
     print(length*'-'+'\n'+msg+'\n'+length*'-')
     return
 
-def optimize_orders_processing(sales_clusters_df,cluster,maximum_waiting_time):
+def optimize_orders_processing(sales_clusters_df,cluster,maximum_waiting_time,detailed_view):
     
    
     sales_cluster=sales_clusters_df[sales_clusters_df['Cluster']==cluster][['noisy_date','noisy_quantity','product']].\
@@ -75,45 +75,46 @@ sort_values(by='noisy_date')
     
     batch_dates_df['batch']=np.max(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values)
     
-    fig = go.Figure()
-
-    
-    fig.add_trace(go.Scatter(x=sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_date'].astype(str).values,
-                             y=sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values,
-                        mode='markers',
-                        name='Cluster '+str(cluster)))
-
-    fig.add_trace(go.Bar(x=batch_dates_df['batch_date'], y=batch_dates_df['batch'],
-                    marker_color='lightgrey',
-                         name='Batch dates'))
-
-    for batch in sales_cluster.batch.value_counts().index.values:
-
-        fig.add_trace(go.Scatter(x=sales_cluster[sales_cluster['batch']==batch].index.astype(str).values,
-                             y=sales_cluster[sales_cluster['batch']==batch]['noisy_quantity'].values,
-                        mode='markers',
-                        name='batch '+str(batch)))
+    if detailed_view:
+        fig = go.Figure()
 
 
+        fig.add_trace(go.Scatter(x=sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_date'].astype(str).values,
+                                 y=sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values,
+                            mode='markers',
+                            name='Cluster '+str(cluster)))
+
+        fig.add_trace(go.Bar(x=batch_dates_df['batch_date'], y=batch_dates_df['batch'],
+                        marker_color='lightgrey',
+                             name='Batch dates'))
+
+        for batch in sales_cluster.batch.value_counts().index.values:
+
+            fig.add_trace(go.Scatter(x=sales_cluster[sales_cluster['batch']==batch].index.astype(str).values,
+                                 y=sales_cluster[sales_cluster['batch']==batch]['noisy_quantity'].values,
+                            mode='markers',
+                            name='batch '+str(batch)))
 
 
-    # Edit the layout
-    fig.update_layout(title='Optimized batches for cluster#'+str(cluster),
-                       xaxis_title='Date',
-                       yaxis_title='Quantities')
-
-    fig.update_yaxes(range=[np.min(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values),
-                            np.max(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values)])
 
 
-    fig.show()
+        # Edit the layout
+        fig.update_layout(title='Optimized batches for cluster#'+str(cluster),
+                           xaxis_title='Date',
+                           yaxis_title='Quantities')
+
+        fig.update_yaxes(range=[np.min(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values),
+                                np.max(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values)])
+
+
+        fig.show()
     
     return sales_cluster
 
 
 #forecast_part
 
-def generate_models_n_preds_df_n_plotly_viz(sales_clusters_df,test_start_date,product):
+def generate_models_n_preds_df_n_plotly_viz(sales_clusters_df,test_start_date,product,detailed_view):
     """ This function aims to take a product and output:
         -  1 date model
         -  1 qty model
@@ -140,7 +141,8 @@ def generate_models_n_preds_df_n_plotly_viz(sales_clusters_df,test_start_date,pr
     next_sale_date_model=Prophet()
     
     # Train the model on the training year
-    print_msg('--> Now training the "date model"')
+    if detailed_view:
+        print_msg('--> Now training the "date model"')
     next_sale_date_model.fit(prophet_date_df[:idx_split-1])
     
     # Make predictions on the complete df (training + test year) : this will let us check the overfitting later on
@@ -161,7 +163,9 @@ def generate_models_n_preds_df_n_plotly_viz(sales_clusters_df,test_start_date,pr
     # Instantiate the quantity model 
     qty_model=Prophet()
     
-    print_msg('--> Now training the "quantity model"')
+    if detailed_view:
+        print_msg('--> Now training the "quantity model"')
+        
     qty_model.fit(prophet_qty_df[:idx_split])
     
     # Make predictions on the complete df (training + test year) : this will let us check the overfitting later on
@@ -199,10 +203,11 @@ def generate_models_n_preds_df_n_plotly_viz(sales_clusters_df,test_start_date,pr
     # Include the actual values in the full_preds_df
     full_predictions_df['y']=prophet_qty_df['y'].values
     
-    # Plot it (fancy with plotly)
-    plot_full_preds(full_predictions_df,
-                  product,
-                  idx_split)
+    if detailed_view:
+        # Plot it (fancy with plotly)
+        plot_full_preds(full_predictions_df,
+                      product,
+                      idx_split)
     
     return (next_sale_date_model,
             qty_model,
@@ -314,73 +319,183 @@ def plot_full_preds(full_preds_df, product, idx_split):
     
     return
 
-def get_aggregated_preds(sales_clusters_df,cluster,test_start_date):
+def get_aggregated_preds(sales_clusters_df,cluster,test_start_date,detailed_view):
     
     cluster_products=sales_clusters_df[sales_clusters_df.Cluster==cluster]['product'].unique()
     
     cluster_preds=[]
     for prod in cluster_products:
-        cluster_preds.append(generate_models_n_preds_df_n_plotly_viz(sales_clusters_df,test_start_date,prod))
+        cluster_preds.append(generate_models_n_preds_df_n_plotly_viz(sales_clusters_df,test_start_date,prod,detailed_view))
         
     cluster_aggregated_preds=cluster_preds[0][2]
     cluster_aggregated_preds['product']=cluster_products[0]
     for i,prod in enumerate(cluster_products[1:]):
-        print(i)
-        print(prod)
+#         print(i)
+#         print(prod)
         local_df=cluster_preds[i+1][2]
         local_df['product']=prod
         cluster_aggregated_preds=pd.concat([cluster_aggregated_preds,local_df])
         
     cluster_preds_test_year=cluster_aggregated_preds[cluster_aggregated_preds['yhat_date']>test_start_date]
     
+    if detailed_view:
+        fig = go.Figure()
 
+        fig.add_trace(go.Scatter(x=sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_date'].astype(str).values,
+                                     y=sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values,
+                                mode='markers',
+                                name='Cluster '+str(cluster)))
+
+        fig.add_trace(go.Scatter(x=cluster_preds_test_year['yhat_date'].astype(str).values,
+                                     y=cluster_preds_test_year['yhat_qty'].values,
+                                mode='markers',
+                                name='Cluster '+str(cluster)+ ' preds'))
+
+        fig.update_layout(
+                shapes=[
+                    # Line Vertical
+                    go.layout.Shape(
+                        type="line",
+                        x0=test_start_date,
+                        y0=np.min(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values),
+                        x1=test_start_date,
+                        y1=np.max(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values),
+                        line=dict(
+                            color="grey",
+                            width=2,
+                            dash="dashdot"
+                        )
+                    )
+                ]
+            )
+
+        fig.add_trace(go.Scatter(
+                x=[str(int(test_start_date.split('-')[0])-1)+'-10-10',
+                      test_start_date.split('-')[0]+'-03-10'],
+                y=[np.min(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values),
+                           np.min(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values)],
+                text=["Training data <--",
+                      "--> Testing data"],
+                mode="text",
+                name='training and test data'
+            ))
+
+        # Edit the layout
+        fig.update_layout(title='Labels Sales for cluster #' + str(cluster),
+                           xaxis_title='Date',
+                           yaxis_title='Quantities')
+
+
+        fig.show()
+
+    return cluster_aggregated_preds
+
+
+def get_cluster_level_predicted_batches(sales_clusters_df,
+                                       cluster,
+                                       max_waiting_time='10 days',
+                                       test_date='2019-01-01',
+                                       detailed_view=False):
+    
+    
+    '''
+    This function is working at a cluster level: it takes a cluster and 
+    predicts the batches for the test year, then it compares it with the actual data
+    
+    - Inputs:
+        -  The original sales dataframe generated by the simulated data generator notebook,
+        -  A cluster (a group of products with similar machine settings),
+        -  A maximum waiting time (for optimization and batches generation),
+        -  A test_date (to know what dat should be used to train the forecast models)
+    -  Outputs:
+        - The graph comparing the best optimal batches (with the actual data if it is available) and the predicted batches with the predicted quantities over the actual quantities delta
+        - The 2 dataframes :
+            -  1 df with the optimal batches (dates, quantities, associated products and dates)
+            -  1 df with the predicted batches (predicted dates, predicted quantities, associated products and associated dates)
+        - The dates and quantities models if required (WIP)
+    '''
+    
+    sales_clusters_df.rename(index=str,
+                        columns={'product_code':'product'},inplace=True)
+    
+    print_msg('Optimizing the actual data')
+    
+    sales_cluster_optimization=optimize_orders_processing(sales_clusters_df,
+                                                               cluster,
+                                                               max_waiting_time,
+                                                              detailed_view)
+    
+    print_msg('Creating and aggregating the Prophet/Sales forecasting models for cluster #{}'.format(cluster))
+    
+    cluster_aggregated_preds=get_aggregated_preds(sales_clusters_df,cluster,test_date,detailed_view)
+    
+    cluster_aggregated_preds=cluster_aggregated_preds.rename(index=str, columns={"yhat_date": "noisy_date",
+                                                                  "yhat_qty": "noisy_quantity"})
+
+    cluster_aggregated_preds=cluster_aggregated_preds[~pd.isnull(cluster_aggregated_preds['noisy_date'])]
+
+    cluster_aggregated_preds['Cluster']=cluster
+    
+    print_msg('Optimizing the predicted data')
+    
+    sales_cluster_optimized_preds=optimize_orders_processing(cluster_aggregated_preds,cluster,max_waiting_time,detailed_view)
+    
+    batch_dates_n_predicted_quantities_cluster=transform_the_optimized_df(sales_cluster_optimized_preds,
+                                                                        "predicted_quantities")
+    batch_dates_n_quantities_cluster=transform_the_optimized_df(sales_cluster_optimization,'quantities')
+
+    batch_dates_n_quantities_cluster.reset_index(inplace=True)
+
+    batch_dates_n_predicted_quantities_cluster.reset_index(inplace=True)
+    
+    test_year=test_date.split('-')[0]
+    
+    total_predicted_quantities=np.sum(batch_dates_n_predicted_quantities_cluster['predicted_quantities'])
+    
+    total_quantities=np.sum(batch_dates_n_quantities_cluster['quantities'])
+
+    preds_coverage=100*(total_predicted_quantities/total_quantities)
+    
+    print_msg('The predicted quantities represent {:.1f}% of the actual quantities'.format(preds_coverage))
+    
     fig = go.Figure()
 
-    fig.add_trace(go.Scatter(x=sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_date'].astype(str).values,
-                                 y=sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values,
-                            mode='markers',
-                            name='Cluster '+str(cluster)))
+    fig.add_trace(go.Bar(x=batch_dates_n_quantities_cluster[batch_dates_n_quantities_cluster['batch_date']>test_year]\
+                     ['batch_date'], 
+             y=batch_dates_n_quantities_cluster[batch_dates_n_quantities_cluster['batch_date']>test_year]\
+                     ['quantities'],
+                    name='Optimized batches - actual values',
+                    width=1e3*pd.Timedelta(max_waiting_time).total_seconds()/2))
 
-    fig.add_trace(go.Scatter(x=cluster_preds_test_year['yhat_date'].astype(str).values,
-                                 y=cluster_preds_test_year['yhat_qty'].values,
-                            mode='markers',
-                            name='Cluster '+str(cluster)+ ' preds'))
-
-    fig.update_layout(
-            shapes=[
-                # Line Vertical
-                go.layout.Shape(
-                    type="line",
-                    x0=test_start_date,
-                    y0=np.min(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values),
-                    x1=test_start_date,
-                    y1=np.max(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values),
-                    line=dict(
-                        color="grey",
-                        width=2,
-                        dash="dashdot"
-                    )
-                )
-            ]
-        )
-
-    fig.add_trace(go.Scatter(
-            x=[str(int(test_start_date.split('-')[0])-1)+'-10-10',
-                  test_start_date.split('-')[0]+'-03-10'],
-            y=[np.min(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values),
-                       np.min(sales_clusters_df[sales_clusters_df['Cluster']==cluster]['noisy_quantity'].values)],
-            text=["Training data <--",
-                  "--> Testing data"],
-            mode="text",
-            name='training and test data'
-        ))
+    fig.add_trace(go.Bar(x=batch_dates_n_predicted_quantities_cluster[batch_dates_n_predicted_quantities_cluster['batch_date']>test_year]\
+                     ['batch_date'], 
+             y=batch_dates_n_predicted_quantities_cluster[batch_dates_n_predicted_quantities_cluster['batch_date']>test_year]\
+                     ['predicted_quantities'],
+                    name='Predicted batches',
+                    width=1e3*pd.Timedelta(max_waiting_time).total_seconds()/2,
+                    marker_color='lightgreen'))
 
     # Edit the layout
-    fig.update_layout(title='Labels Sales for cluster #' + str(cluster),
-                       xaxis_title='Date',
-                       yaxis_title='Quantities')
-
-
+    fig.update_layout(title='Cluster #{} optimal batches vs predicted batches for the test period'.format(cluster),
+                   xaxis_title='Date',
+                   yaxis_title='Quantities')
     fig.show()
     
-    return cluster_aggregated_preds
+    return (batch_dates_n_quantities_cluster,
+           batch_dates_n_predicted_quantities_cluster)
+
+
+
+def transform_the_optimized_df(sales_cluster_df,quantities):
+    
+    local_df=sales_cluster_df.reset_index()
+    batch_dates_n_quantities_cluster=local_df.groupby('batch_date').sum()
+    batch_dates_n_quantities_cluster['products_quantities_and_dates']=local_df.\
+groupby('batch_date')[['product','noisy_quantity','noisy_date']].apply(lambda x: x.values.tolist())
+    batch_dates_n_quantities_cluster=batch_dates_n_quantities_cluster[['noisy_quantity',
+                                                                      'products_quantities_and_dates']]
+    batch_dates_n_quantities_cluster.rename(index=str,
+                                         columns={"noisy_quantity": quantities},
+                                         inplace=True)
+    
+    return batch_dates_n_quantities_cluster
