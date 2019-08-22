@@ -9,7 +9,124 @@ from fbprophet.plot import plot_plotly
 
 import plotly.offline as py
 import plotly.graph_objs as go
+import plotly.express as px
 
+
+# Main function:
+
+def get_predicted_batches(sales_clusters_df,
+                         test_date,
+                         max_waiting_time,
+                         detailed_view=False,
+                         calendar_length='7 days'):
+    
+    '''This function takes the original sales df, 
+    computes the dates and quantities models at a product level using the test_date to split the dataset,
+    generates the predicted sales, 
+    computes the associated "predicted" batches using the max waiting time value,
+    computes the optimal batches using the actual data using the max waiting time value,
+    outputs the optimal batches df and the predicted batches df,
+    and 2 graphs to visualize it:
+    
+    -  Input:
+      -  The original sales dataframe
+      -  The test date (start of the test data) --> the training data is automatically all sales prior to this date
+      -  The maximum waiting time
+      -  The calendar length you want to zoom in
+    -  Output:
+      - Main graph with optimal batches vs predicted batches for the test data
+      - The same graph zoomed in the week following the test date
+      - 1 optimal batches df
+      - 1 predicted batches df
+    '''
+    
+    clusters_list=sales_clusters_df['Cluster'].unique()
+    
+    optimal_batches=[]
+    predicted_batches=[]
+    for cluster in clusters_list:
+        local_optimal_batches,local_predicted_batches=get_cluster_level_predicted_batches(sales_clusters_df,
+                                                                                              cluster,
+                                                                                               max_waiting_time,
+                                                                                              test_date,
+                                                                                              detailed_view)
+        local_optimal_batches['Cluster']=cluster
+        local_predicted_batches['Cluster']=cluster
+        optimal_batches.append(local_optimal_batches)
+        predicted_batches.append(local_predicted_batches)
+        
+    optimal_batches=pd.concat(optimal_batches)
+
+    optimal_batches.reset_index(drop=True,
+                            inplace=True)
+    
+    predicted_batches=pd.concat(predicted_batches)
+    predicted_batches.reset_index(drop=True,
+                            inplace=True)
+    
+    dark_map=px.colors.qualitative.Dark2
+    pastel_map=px.colors.qualitative.Pastel2
+    
+    fig = go.Figure()
+
+    for (cluster,dark_color,pastel_color) in zip(clusters_list,dark_map,pastel_map):
+        local_optimal=optimal_batches[optimal_batches['Cluster']==cluster]
+        local_predicted=predicted_batches[predicted_batches['Cluster']==cluster]
+        fig.add_trace(go.Bar(x=local_optimal[local_optimal['batch_date']>test_date]\
+                         ['batch_date'], 
+                 y=local_optimal[local_optimal['batch_date']>test_date]\
+                         ['quantities'],
+                        name='Cluster #{}\nOptimized batches - actual values'.format(cluster),
+                        width=2e2*pd.Timedelta(max_waiting_time).total_seconds()/2,
+                            marker_color=dark_color))
+
+        fig.add_trace(go.Bar(x=local_predicted[local_predicted['batch_date']>test_date]\
+                         ['batch_date'], 
+                 y=local_predicted[local_predicted['batch_date']>test_date]\
+                         ['predicted_quantities'],
+                        name='Cluster #{}\nPredicted batches'.format(cluster),
+                        width=2e2*pd.Timedelta(max_waiting_time).total_seconds()/2,
+                            marker_color=pastel_color))
+
+    # Edit the layout
+    fig.update_layout(title='Optimal batches vs predicted batches for the test period',
+                   xaxis_title='Date',
+                   yaxis_title='Quantities')
+    fig.show()
+    
+    fig = go.Figure()
+
+    for (cluster,dark_color,pastel_color) in zip(clusters_list,dark_map,pastel_map):
+        local_optimal=optimal_batches[optimal_batches['Cluster']==cluster]
+        local_predicted=predicted_batches[predicted_batches['Cluster']==cluster]
+        fig.add_trace(go.Bar(x=local_optimal[(local_optimal['batch_date']>test_date)  & \
+                 (local_optimal['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
+                         ['batch_date'], 
+                 y=local_optimal[(local_optimal['batch_date']>test_date)  & \
+                 (local_optimal['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
+                         ['quantities'],
+                        name='Cluster #{}\nOptimized batches - actual values'.format(cluster),
+                        width=1e3*pd.Timedelta('1 day').total_seconds(),
+                            marker_color=dark_color))
+
+        fig.add_trace(go.Bar(x=local_predicted[(local_predicted['batch_date']>test_date)  & \
+                 (local_predicted['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
+                         ['batch_date'], 
+                 y=local_predicted[(local_predicted['batch_date']>test_date)  & \
+                 (local_predicted['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
+                         ['predicted_quantities'],
+                        name='Cluster #{}\nPredicted batches'.format(cluster),
+                        width=1e3*pd.Timedelta('1 day').total_seconds(),
+                            marker_color=pastel_color))
+
+    # Edit the layout
+    fig.update_layout(title='Optimal batches vs predicted batches for the test period',
+                   xaxis_title='Date',
+                   yaxis_title='Quantities')
+    fig.show()
+    
+    return (optimal_batches,predicted_batches)
+    
 
 # Optimization part
 
@@ -418,7 +535,7 @@ def get_cluster_level_predicted_batches(sales_clusters_df,
     sales_clusters_df.rename(index=str,
                         columns={'product_code':'product'},inplace=True)
     
-    print_msg('Optimizing the actual data')
+    print_msg('Optimizing the actual data for cluster #{}'.format(cluster))
     
     sales_cluster_optimization=optimize_orders_processing(sales_clusters_df,
                                                                cluster,
@@ -458,28 +575,30 @@ def get_cluster_level_predicted_batches(sales_clusters_df,
     
     print_msg('The predicted quantities represent {:.1f}% of the actual quantities'.format(preds_coverage))
     
-    fig = go.Figure()
+    if detailed_view:
+        
+        fig = go.Figure()
 
-    fig.add_trace(go.Bar(x=batch_dates_n_quantities_cluster[batch_dates_n_quantities_cluster['batch_date']>test_year]\
-                     ['batch_date'], 
-             y=batch_dates_n_quantities_cluster[batch_dates_n_quantities_cluster['batch_date']>test_year]\
-                     ['quantities'],
-                    name='Optimized batches - actual values',
-                    width=1e3*pd.Timedelta(max_waiting_time).total_seconds()/2))
+        fig.add_trace(go.Bar(x=batch_dates_n_quantities_cluster[batch_dates_n_quantities_cluster['batch_date']>test_year]\
+                         ['batch_date'], 
+                 y=batch_dates_n_quantities_cluster[batch_dates_n_quantities_cluster['batch_date']>test_year]\
+                         ['quantities'],
+                        name='Optimized batches - actual values',
+                        width=1e3*pd.Timedelta(max_waiting_time).total_seconds()/2))
 
-    fig.add_trace(go.Bar(x=batch_dates_n_predicted_quantities_cluster[batch_dates_n_predicted_quantities_cluster['batch_date']>test_year]\
-                     ['batch_date'], 
-             y=batch_dates_n_predicted_quantities_cluster[batch_dates_n_predicted_quantities_cluster['batch_date']>test_year]\
-                     ['predicted_quantities'],
-                    name='Predicted batches',
-                    width=1e3*pd.Timedelta(max_waiting_time).total_seconds()/2,
-                    marker_color='lightgreen'))
+        fig.add_trace(go.Bar(x=batch_dates_n_predicted_quantities_cluster[batch_dates_n_predicted_quantities_cluster['batch_date']>test_year]\
+                         ['batch_date'], 
+                 y=batch_dates_n_predicted_quantities_cluster[batch_dates_n_predicted_quantities_cluster['batch_date']>test_year]\
+                         ['predicted_quantities'],
+                        name='Predicted batches',
+                        width=1e3*pd.Timedelta(max_waiting_time).total_seconds()/2,
+                        marker_color='lightgreen'))
 
-    # Edit the layout
-    fig.update_layout(title='Cluster #{} optimal batches vs predicted batches for the test period'.format(cluster),
-                   xaxis_title='Date',
-                   yaxis_title='Quantities')
-    fig.show()
+        # Edit the layout
+        fig.update_layout(title='Cluster #{} optimal batches vs predicted batches for the test period'.format(cluster),
+                       xaxis_title='Date',
+                       yaxis_title='Quantities')
+        fig.show()
     
     return (batch_dates_n_quantities_cluster,
            batch_dates_n_predicted_quantities_cluster)
