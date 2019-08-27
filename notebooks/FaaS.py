@@ -504,6 +504,11 @@ def get_aggregated_preds(sales_clusters_df,cluster,test_start_date,detailed_view
 
 
         fig.show()
+        
+    cluster_aggregated_preds['error_days']=cluster_aggregated_preds['yhat_date']-cluster_aggregated_preds['ds']
+    cluster_aggregated_preds['error_quantities']=100*(cluster_aggregated_preds['yhat_qty'] - \
+                                                      cluster_aggregated_preds['y'])\
+                                                     /cluster_aggregated_preds['y']
 
     return cluster_aggregated_preds
 
