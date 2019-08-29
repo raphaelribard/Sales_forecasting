@@ -14,6 +14,28 @@ The project objective is to show the Prophet libraries capabilities on simulated
         This will provide a tool for the production optimization. 
         If we can group the products while using the forecasting tools,
         that could give an edge to the company we deliver this tool to.
+        
+The data has been simulated included 5 days random noise in the dates and 10% random noise in the quantities.
+
+## Two tables will be generated:
+- The first table will attach every product to a cluster of products (5 clusters A, B, C, D and E will be used):
+
+| Product_code  |  Associated cluster |
+|---|---|
+| CLA01  |  A  |
+| CLA02  |   E  |
+| CLB01  |   A  |
+
+The product code 3 first characters define the client : CLA : Client A , CLB : Client B etc.
+
+- The second table is the actual Sales history table:
+
+| Product_code  | Date  |  Quantity |
+|---|---|---|
+|  CLB01 | 25/07/2019  | 1,000  |
+|  CLB01 | 19/07/2019  |  1,500 |
+|   CLA02 | 23/07/2019  |  10,000 |
+
 
 ![Image of Predicted sales](https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/Predicted_sales.png)
 
