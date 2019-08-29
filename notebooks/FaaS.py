@@ -131,12 +131,79 @@ def get_predicted_batches(sales_clusters_df,
                    yaxis_title='Quantities')
     fig.show()
     
+    local_preds=preds[preds['ds']>test_date]
+    
     sns.set(style="white")
     # Show the joint distribution using kernel density estimation
-    g = sns.jointplot(pd.Series(preds['error_days'].values/(24*60*60*1e9),name='error_days\nin days'),
-                      pd.Series(preds['error_quantities'].values, name='error_quantities\nin%'),
-                      kind="kde", height=7, space=0).set_title('All aggregated errors')
-    plt.show()
+    g = sns.jointplot(pd.Series(local_preds['error_days'].values/(24*60*60*1e9),name='error_days\nin days'),
+                      pd.Series(local_preds['error_quantities'].values, name='error_quantities\nin%'),
+                      kind="kde", height=7, space=0)
+    
+    
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=preds['ds'],
+                             y=preds['y'],
+                              marker=dict(
+                                        color='LightSkyBlue',
+                                        size=10,
+                                        line=dict(
+                                            color='white',
+                                            width=2
+                                        )
+                                    ),
+                                mode='markers',
+                            name='actual_y'))
+
+    fig.add_trace(go.Scatter(x=local_preds['yhat_date'],
+                             y=local_preds['yhat_qty'].astype(int),
+                             opacity=0.5,
+                             marker=dict(
+                                        size=7,
+                                        line=dict(
+                                            color='MediumPurple',
+                                            width=2
+                                        )
+                                    ),
+                            mode='markers',
+                            name='yhat'))
+
+
+
+    fig.update_layout(
+        shapes=[
+            # Line Vertical
+            go.layout.Shape(
+                type="line",
+                x0=test_date,
+                y0=np.min(preds['y']),
+                x1=test_date,
+                y1=np.max(preds['y']),
+                line=dict(
+                    color="grey",
+                    width=2,
+                    dash="dashdot"
+                )
+            )
+        ]
+    )
+
+    fig.add_trace(go.Scatter(
+        x=[pd.Timestamp(test_date)-pd.Timedelta('90 days'),
+          pd.Timestamp(test_date)+pd.Timedelta('90 days')],
+        y=[np.min(preds['y']),
+                   np.min(preds['y'])],
+        text=["Training data <--",
+              "--> Testing data"],
+        mode="text",
+        name='training and test data'))
+
+    # Edit the layout
+    fig.update_layout(title='All predicted dates and quantities',
+                       xaxis_title='Date',
+                       yaxis_title='Sales quantities')
+
+    fig.show()
     
     return (optimal_batches,predicted_batches,preds)
     
@@ -622,14 +689,15 @@ def get_cluster_level_predicted_batches(sales_clusters_df,
                        yaxis_title='Quantities')
         fig.show()
         
-    sns.set(style="white")
-    # Show the joint distribution using kernel density estimation
-    try:
-        g = sns.jointplot(pd.Series(full_preds['error_days'].values/(24*60*60*1e9),name='error_days\nin days'),
-                          pd.Series(full_preds['error_quantities'].values, name='error_quantities\nin%'),
-                          kind="kde", height=7, space=0)
-    except:
-        print('Data is too small for this cluster to output the performance graph')
+        
+        sns.set(style="white")
+        # Show the joint distribution using kernel density estimation
+        try:
+            g = sns.jointplot(pd.Series(full_preds['error_days'].values/(24*60*60*1e9),name='error_days\nin days'),
+                              pd.Series(full_preds['error_quantities'].values, name='error_quantities\nin%'),
+                              kind="kde", height=7, space=0)
+        except:
+            print('Data is too small for this cluster to output the performance graph')
     
     return (batch_dates_n_quantities_cluster,
            batch_dates_n_predicted_quantities_cluster,
