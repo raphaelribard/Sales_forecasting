@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
@@ -44,8 +45,9 @@ def get_predicted_batches(sales_clusters_df,
     
     optimal_batches=[]
     predicted_batches=[]
+    preds=[]
     for cluster in clusters_list:
-        local_optimal_batches,local_predicted_batches=get_cluster_level_predicted_batches(sales_clusters_df,
+        local_optimal_batches,local_predicted_batches,local_preds=get_cluster_level_predicted_batches(sales_clusters_df,
                                                                                               cluster,
                                                                                                max_waiting_time,
                                                                                               test_date,
@@ -54,14 +56,18 @@ def get_predicted_batches(sales_clusters_df,
         local_predicted_batches['Cluster']=cluster
         optimal_batches.append(local_optimal_batches)
         predicted_batches.append(local_predicted_batches)
+        preds.append(local_preds)
         
     optimal_batches=pd.concat(optimal_batches)
-
     optimal_batches.reset_index(drop=True,
                             inplace=True)
     
     predicted_batches=pd.concat(predicted_batches)
     predicted_batches.reset_index(drop=True,
+                            inplace=True)
+    
+    preds=pd.concat(preds)
+    preds.reset_index(drop=True,
                             inplace=True)
     
     dark_map=px.colors.qualitative.Dark2
@@ -125,7 +131,14 @@ def get_predicted_batches(sales_clusters_df,
                    yaxis_title='Quantities')
     fig.show()
     
-    return (optimal_batches,predicted_batches)
+    sns.set(style="white")
+    # Show the joint distribution using kernel density estimation
+    g = sns.jointplot(pd.Series(preds['error_days'].values/(24*60*60*1e9),name='error_days\nin days'),
+                      pd.Series(preds['error_quantities'].values, name='error_quantities\nin%'),
+                      kind="kde", height=7, space=0).set_title('All aggregated errors')
+    plt.show()
+    
+    return (optimal_batches,predicted_batches,preds)
     
 
 # Optimization part
@@ -510,6 +523,7 @@ def get_aggregated_preds(sales_clusters_df,cluster,test_start_date,detailed_view
                                                       cluster_aggregated_preds['y'])\
                                                      /cluster_aggregated_preds['y']
 
+
     return cluster_aggregated_preds
 
 
@@ -550,6 +564,9 @@ def get_cluster_level_predicted_batches(sales_clusters_df,
     print_msg('Creating and aggregating the Prophet/Sales forecasting models for cluster #{}'.format(cluster))
     
     cluster_aggregated_preds=get_aggregated_preds(sales_clusters_df,cluster,test_date,detailed_view)
+    
+    full_preds= cluster_aggregated_preds.copy()
+    full_preds['Cluster']=cluster
     
     cluster_aggregated_preds=cluster_aggregated_preds.rename(index=str, columns={"yhat_date": "noisy_date",
                                                                   "yhat_qty": "noisy_quantity"})
@@ -604,9 +621,19 @@ def get_cluster_level_predicted_batches(sales_clusters_df,
                        xaxis_title='Date',
                        yaxis_title='Quantities')
         fig.show()
+        
+    sns.set(style="white")
+    # Show the joint distribution using kernel density estimation
+    try:
+        g = sns.jointplot(pd.Series(full_preds['error_days'].values/(24*60*60*1e9),name='error_days\nin days'),
+                          pd.Series(full_preds['error_quantities'].values, name='error_quantities\nin%'),
+                          kind="kde", height=7, space=0)
+    except:
+        print('Data is too small for this cluster to output the performance graph')
     
     return (batch_dates_n_quantities_cluster,
-           batch_dates_n_predicted_quantities_cluster)
+           batch_dates_n_predicted_quantities_cluster,
+           full_preds)
 
 
 
