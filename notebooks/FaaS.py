@@ -83,7 +83,7 @@ def get_predicted_batches(sales_clusters_df,
                  y=local_optimal[local_optimal['batch_date']>test_date]\
                          ['quantities'],
                         name='Cluster #{}\nOptimized batches - actual values'.format(cluster),
-                        width=2e2*pd.Timedelta(max_waiting_time).total_seconds()/2,
+                        width=pd.Timedelta('1 day').value,
                             marker_color=dark_color))
 
         fig.add_trace(go.Bar(x=local_predicted[local_predicted['batch_date']>test_date]\
@@ -91,7 +91,7 @@ def get_predicted_batches(sales_clusters_df,
                  y=local_predicted[local_predicted['batch_date']>test_date]\
                          ['predicted_quantities'],
                         name='Cluster #{}\nPredicted batches'.format(cluster),
-                        width=2e2*pd.Timedelta(max_waiting_time).total_seconds()/2,
+                        width=pd.Timedelta('1 day').value,
                             marker_color=pastel_color))
 
     # Edit the layout
@@ -105,9 +105,9 @@ def get_predicted_batches(sales_clusters_df,
     for (cluster,dark_color,pastel_color) in zip(clusters_list,dark_map,pastel_map):
         local_optimal=optimal_batches[optimal_batches['Cluster']==cluster]
         local_predicted=predicted_batches[predicted_batches['Cluster']==cluster]
-        fig.add_trace(go.Bar(x=local_optimal[(local_optimal['batch_date']>test_date)  & \
+        fig.add_trace(go.Bar(x=pd.to_datetime(local_optimal[(local_optimal['batch_date']>test_date)  & \
                  (local_optimal['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
-                         ['batch_date'], 
+                         ['batch_date']) - pd.Timedelta('12 hours'), 
                  y=local_optimal[(local_optimal['batch_date']>test_date)  & \
                  (local_optimal['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
                          ['quantities'],
@@ -115,9 +115,9 @@ def get_predicted_batches(sales_clusters_df,
                         width=1e3*pd.Timedelta('1 day').total_seconds(),
                             marker_color=dark_color))
 
-        fig.add_trace(go.Bar(x=local_predicted[(local_predicted['batch_date']>test_date)  & \
+        fig.add_trace(go.Bar(x=pd.to_datetime(local_predicted[(local_predicted['batch_date']>test_date)  & \
                  (local_predicted['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
-                         ['batch_date'], 
+                         ['batch_date'])- pd.Timedelta('12 hours'), 
                  y=local_predicted[(local_predicted['batch_date']>test_date)  & \
                  (local_predicted['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
                          ['predicted_quantities'],
