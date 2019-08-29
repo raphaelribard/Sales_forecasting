@@ -15,7 +15,7 @@ The project objective is to show the Prophet libraries capabilities on simulated
         If we can group the products while using the forecasting tools,
         that could give an edge to the company we deliver this tool to.
         
-The data has been simulated included 5 days random noise in the dates and 10% random noise in the quantities.
+The data has been simulated included 3 days random noise in the dates and 10% random noise in the quantities.
 
 ## Two tables will be generated:
 - The first table will attach every product to a cluster of products (5 clusters A, B, C, D and E will be used):
@@ -48,7 +48,7 @@ The predictions performance is assessed using the following joint plot:
 - The horizontal axis shows the error in the number of days for the predicted dates (in days)
 <img src="https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/Predictions_performance.png" width="500">
 
-We can see that the algorithm captured the simulated noise (5 days random noise and 10% random noise for the quantities).
+We can see that the algorithm captured the simulated noise (3 days random noise and 10% random noise for the quantities).
 
 Project Organization
 ------------
