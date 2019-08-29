@@ -7,8 +7,10 @@ The project objective is to show the Prophet libraries capabilities on simulated
 
         The sales will refer to different products for different clients
         (multiple products can be attached to only one client : many to many). 
+        
         Every product will be attached to a cluster of products. 
         A cluster of products is attached to a specific machine settings. 
+        
         This will provide a tool for the production optimization. 
         If we can group the products while using the forecasting tools,
         that could give an edge to the company we deliver this tool to.
