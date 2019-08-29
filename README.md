@@ -39,6 +39,10 @@ The product code 3 first characters define the client : CLA : Client A , CLB : C
 
 ![Image of Predicted sales](https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/Predicted_sales.png)
 
+
+
+![Image of Predictions performance](https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/Predictions_performance.png)
+
 Project Organization
 ------------
 
