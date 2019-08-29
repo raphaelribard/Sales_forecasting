@@ -37,11 +37,17 @@ The product code 3 first characters define the client : CLA : Client A , CLB : C
 |   CLA02 | 23/07/2019  |  10,000 |
 
 
+The Predicted sales appear in the graph below:
+
 ![Image of Predicted sales](https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/Predicted_sales.png)
 
+The predictions performance is assessed using the following joint plot: 
 
+- The vertical axis shows the errors in the quantities values (in %)
+- The horizontal axis shows the error in the number of days for the predicted dates (in days)
 <img src="https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/Predictions_performance.png" width="500">
 
+We can see that the algorithm captured the simulated noise (5 days random noise and 10% random noise for the quantities).
 
 Project Organization
 ------------
