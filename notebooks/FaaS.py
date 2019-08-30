@@ -142,6 +142,72 @@ def get_predicted_batches(sales_clusters_df,
                    yaxis_title='Quantities')
     fig.show()
     
+    fig = go.Figure()
+
+    for (cluster,dark_color,pastel_color) in zip(clusters_list,dark_map,pastel_map):
+        local_optimal=optimal_batches[optimal_batches['Cluster']==cluster]
+        local_predicted=predicted_batches[predicted_batches['Cluster']==cluster]
+        local_preds=preds[preds['Cluster']==cluster]
+        
+        fig.add_trace(go.Bar(x=pd.to_datetime(local_optimal[(local_optimal['batch_date']>test_date)  & \
+                 (local_optimal['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
+                         ['batch_date']) - pd.Timedelta('0 hours'), 
+                 y=local_optimal[(local_optimal['batch_date']>test_date)  & \
+                 (local_optimal['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
+                         ['quantities'],
+                        name='Cluster #{}\nOptimized batches - actual values'.format(cluster),
+                        width=1e3*pd.Timedelta('6 hours').total_seconds(),
+                            marker_color=dark_color,
+                             marker_line_color='black',
+                  marker_line_width=1.5,
+                             opacity=0.6))
+
+        fig.add_trace(go.Bar(x=pd.to_datetime(local_predicted[(local_predicted['batch_date']>test_date)  & \
+                 (local_predicted['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
+                         ['batch_date'])- pd.Timedelta('0 hours'), 
+                 y=local_predicted[(local_predicted['batch_date']>test_date)  & \
+                 (local_predicted['batch_date']< str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]\
+                         ['predicted_quantities'],
+                        name='Cluster #{}\nPredicted batches'.format(cluster),
+                        width=1e3*pd.Timedelta('6 hours').total_seconds(),
+                            marker_color=pastel_color,
+                             marker_line_color='black',
+                  marker_line_width=1.5,
+                             opacity=0.6))
+        
+        fig.add_trace(go.Scatter(x=pd.to_datetime(local_preds[(local_preds.ds>test_date) & (local_preds.ds<str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]['ds']),
+                             y=local_preds[(local_preds.ds>test_date) & (local_preds.ds<str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]['y'],
+                              marker=dict(
+                                        color=dark_color,
+                                        size=10,
+                                        line=dict(
+                                            color='white',
+                                            width=2
+                                        )
+                                    ),
+                                mode='markers',
+                            name='actual_sales'))
+        
+        fig.add_trace(go.Scatter(x=pd.to_datetime(local_preds[(local_preds.yhat_date>test_date) & (local_preds.yhat_date<str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]['yhat_date']),
+                             y=local_preds[(local_preds.yhat_date>test_date) & (local_preds.yhat_date<str((pd.Timestamp(test_date)+pd.Timedelta(calendar_length))))]['yhat_qty'],
+                              marker=dict(
+                                        color=pastel_color,
+                                        size=10,
+                                        line=dict(
+                                            color='white',
+                                            width=2
+                                        )
+                                    ),
+                                mode='markers',
+                            name='predicted_sales'))
+
+    # Edit the layout
+    fig.update_layout(barmode='stack', xaxis_tickangle=-45,
+                       title='Optimal batches vs predicted batches for the following week \nPLUS product level sales (predicted and actual)',
+                   xaxis_title='Date',
+                   yaxis_title='Quantities')
+    fig.show()
+    
     local_preds=preds[preds['ds']>test_date]
     
     sns.set(style="white")
