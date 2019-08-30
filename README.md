@@ -50,6 +50,20 @@ The predictions performance is assessed using the following joint plot:
 
 We can see that the algorithm captured the simulated noise (3 days random noise and 10% random noise for the quantities).
 
+The outputs for the client are the following ones : (one full calendar with all the predicted sales and one calendar just for the following week (one clean version and one with the product level predicted and actual sales)):
+
+Full calendar:
+
+![Image of Full calendar](https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/OverallCalendar.png)
+
+Clean calendar for the following week:
+
+![Image of Clean calendar](https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/CleanWeeklyCalendar.png)
+
+Calendar for the following week with product-level sales:
+
+![Image of Weekly calendar](https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/WeeklyCalendarPlusProductLevel.png)
+
 Project Organization
 ------------
 
