@@ -64,6 +64,14 @@ Calendar for the following week with product-level sales:
 
 ![Image of Weekly calendar](https://github.com/raphaelribard/Sales_forecasting/blob/development/docs/WeeklyCalendarPlusProductLevel.png)
 
+
+# TO-DO List:
+-  Redo it at a cluster level instead of a product level
+-  Try to incorporate seasonality impact in the simulated dataset
+-  Try the R changepoint package from Lancaster University
+-  Fully use the CookieCutter structure
+-  Integrate it in AWS
+
 Project Organization
 ------------
 
