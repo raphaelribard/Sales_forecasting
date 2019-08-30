@@ -71,6 +71,7 @@ Calendar for the following week with product-level sales:
 -  Try the R changepoint package from Lancaster University
 -  Fully use the CookieCutter structure
 -  Integrate it in AWS
+-  Clean the code (add comments and make it object oriented building a predictor class)
 
 Project Organization
 ------------
