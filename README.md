@@ -54,15 +54,15 @@ The outputs for the client are the following ones : (one full calendar with all 
 
 Full calendar:
 
-![Image of Full calendar](https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/OverallCalendar.png)
+![Image of Full calendar](https://github.com/raphaelribard/Sales_forecasting/blob/development/docs/OverallCalendar.png)
 
 Clean calendar for the following week:
 
-![Image of Clean calendar](https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/CleanWeeklyCalendar.png)
+![Image of Clean calendar](https://github.com/raphaelribard/Sales_forecasting/blob/development/docs/CleanWeeklyCalendar.png)
 
 Calendar for the following week with product-level sales:
 
-![Image of Weekly calendar](https://github.com/raphaelribard/Sales_forecasting/blob/master/docs/WeeklyCalendarPlusProductLevel.png)
+![Image of Weekly calendar](https://github.com/raphaelribard/Sales_forecasting/blob/development/docs/WeeklyCalendarPlusProductLevel.png)
 
 Project Organization
 ------------
