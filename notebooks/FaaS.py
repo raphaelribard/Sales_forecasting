@@ -353,9 +353,9 @@ def optimize_orders_processing(sales_clusters_df, cluster, maximum_waiting_time,
 
             batch_date = win_edge - ((win.iloc[-1] - win.iloc[0]) / 2)
 
-            sales_cluster.batch_date[((sales_cluster.index <= win_edge) \
+            sales_cluster.batch_date[((sales_cluster.index <= win_edge)
                                       & (sales_cluster.index >
-                                         \(win_edge - pd.Timedelta(maximum_waiting_time))))] = batch_date
+                                         (win_edge - pd.Timedelta(maximum_waiting_time))))] = batch_date
 
             batch_group = batch_group + 1
 
