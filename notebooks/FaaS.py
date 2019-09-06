@@ -45,6 +45,9 @@ class SalesForecaster:
         self.max_waiting_time = max_waiting_time
         self.detailed_view = detailed_view
         self.calendar_length = calendar_length
+        self.optimal_batches = []
+        self.predicted_batches = []
+        self.predictions = []
 
     def get_predicted_batches(self):
 
@@ -336,6 +339,10 @@ class SalesForecaster:
                           yaxis_title='Sales quantities')
 
         fig.show()
+
+        self.optimal_batches=optimal_batches
+        self.predicted_batches=predicted_batches
+        self.predictions=predictions
 
         return optimal_batches, predicted_batches, predictions
 
